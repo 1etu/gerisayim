@@ -321,7 +321,6 @@ public class GUIManager {
     public Inventory createWebhookMenu() {
         Inventory gui = Bukkit.createInventory(null, 27, ChatColor.DARK_PURPLE + "Discord Webhook Ayarları");
         
-        // Status Item (Center)
         ItemStack status = new ItemStack(plugin.isWebhookEnabled() ? Material.GREEN_WOOL : Material.RED_WOOL);
         ItemMeta statusMeta = status.getItemMeta();
         statusMeta.setDisplayName((plugin.isWebhookEnabled() ? ChatColor.GREEN + "✔ Webhook Aktif" : 
@@ -342,7 +341,6 @@ public class GUIManager {
         status.setItemMeta(statusMeta);
         gui.setItem(13, status);
         
-        // URL Configuration (Left)
         ItemStack urlConfig = new ItemStack(Material.BOOK);
         ItemMeta urlMeta = urlConfig.getItemMeta();
         urlMeta.setDisplayName(ChatColor.AQUA + "Webhook URL Ayarla");
@@ -358,7 +356,6 @@ public class GUIManager {
         urlConfig.setItemMeta(urlMeta);
         gui.setItem(11, urlConfig);
         
-        // Test Button (Right)
         ItemStack test = new ItemStack(Material.PAPER);
         ItemMeta testMeta = test.getItemMeta();
         testMeta.setDisplayName(ChatColor.GOLD + "Test Mesajı Gönder");
@@ -373,7 +370,6 @@ public class GUIManager {
         test.setItemMeta(testMeta);
         gui.setItem(15, test);
         
-        // Back Button
         ItemStack back = new ItemStack(Material.ARROW);
         ItemMeta backMeta = back.getItemMeta();
         backMeta.setDisplayName(ChatColor.YELLOW + "Geri Dön");
@@ -384,26 +380,26 @@ public class GUIManager {
     }
 
     private String formatWebhookUrl(String url) {
-        if (url.length() <= 60) return url;
+        if (url.length() <= 40) return url;
         
-        // Find the ID part
-        int idStart = url.indexOf("/webhooks/") + 9;
+        int idStart = url.indexOf("/webhooks/") + 10;
         int idEnd = url.indexOf("/", idStart);
         
         if (idStart != -1 && idEnd != -1) {
-            String start = url.substring(0, idStart);
+            String start = "https://discord.com/.../";
             String id = url.substring(idStart, idEnd);
-            String end = url.substring(idEnd);
+            String token = url.substring(idEnd + 1);
             
-            // Shorten the ID part if it's too long
-            if (id.length() > 10) {
-                id = id.substring(0, 4) + ".." + id.substring(id.length() - 4);
+            if (id.length() > 6) {
+                id = id.substring(0, 3) + "..." + id.substring(id.length() - 3);
+            }
+            if (token.length() > 6) {
+                token = token.substring(0, 3) + "..." + token.substring(token.length() - 3); 
             }
             
-            return start + id + end;
+            return start + id + "/" + token;
         }
         
-        // Fallback if URL doesn't match expected format
-        return url.substring(0, 28) + "..." + url.substring(url.length() - 28);
+        return url.substring(0, 20) + "..." + url.substring(url.length() - 20);
     }
 } 

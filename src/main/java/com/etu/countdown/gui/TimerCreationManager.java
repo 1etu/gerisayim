@@ -59,7 +59,7 @@ public class TimerCreationManager implements Listener {
             
             if (!isValidDiscordWebhook(message)) {
                 player.sendMessage(ChatColor.RED + "Geçersiz Discord webhook URL'si!");
-                player.sendMessage(ChatColor.RED + "URL şu formatta olmalıdır:");
+                player.sendMessage(ChatColor.RED + "URL örnekteki formatta olmalıdır:");
                 player.sendMessage(ChatColor.GRAY + "https://discord.com/api/webhooks/[ID]/[TOKEN]");
                 return;
             }
@@ -70,7 +70,6 @@ public class TimerCreationManager implements Listener {
             
             player.sendMessage(ChatColor.GREEN + "Webhook URL'si kaydedildi ve aktif edildi!");
             
-            // Open the webhook menu after a short delay
             Bukkit.getScheduler().runTask(plugin, () -> {
                 player.openInventory(plugin.getGuiManager().createWebhookMenu());
             });
