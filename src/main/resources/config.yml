@@ -1,0 +1,24 @@
+countdowns:
+  yeniyil:
+    display_name: "Yeni Yıl"
+    date: "31 Aralik 2024 23:59"
+    gui-item: DIAMOND
+    timers:
+      - saat: 1
+        type: MESSAGE
+        content: "&6&lYeni yıla 1 saat kaldı!"
+      - dakika: 30
+        type: MESSAGE
+        content: "&6&lYeni yıla 30 dakika kaldı!"
+      - dakika: 5
+        type: MESSAGE
+        content: "&6&lYeni yıla 5 dakika kaldı!"
+      - dakika: 1
+        type: TITLE
+        content: "&c&l1 DAKİKA KALDI!"
+      - saniye: 30
+        type: MESSAGE
+        content: "&e&lYeni yıla 30 saniye kaldı!"
+      - saniye: 5
+        type: TITLE
+        content: "&c&lYENI YILA 5 SANIYE KALDI!"

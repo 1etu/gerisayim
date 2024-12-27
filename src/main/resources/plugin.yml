@@ -1,0 +1,18 @@
+name: gerisayim
+version: '1.0'
+main: com.etu.countdown.BaseClass
+api-version: '1.19'
+
+commands:
+  etkinlikler:
+    description: Yaklaşan etkinlikleri gösterir
+    usage: /etkinlikler
+  editor:
+    description: Editör
+    permission: countdown.admin
+    usage: /editor
+
+permissions:
+  countdown.admin:
+    description: Etkinlikleri düzenleme yetkisi
+    default: op
