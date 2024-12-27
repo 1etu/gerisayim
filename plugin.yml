@@ -1,4 +1,0 @@
-commands:
-  etkinlikler:
-    description: Yaklaşan etkinlikleri gösterir
-    usage: /etkinlikler 
