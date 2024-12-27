@@ -82,8 +82,23 @@ public class GUIManager {
         addLore.add(ChatColor.GRAY + "için tıklayın");
         addMeta.setLore(addLore);
         addNew.setItemMeta(addMeta);
-        
         gui.setItem(53, addNew);
+
+        ItemStack webhook = new ItemStack(plugin.isWebhookEnabled() ? Material.GREEN_WOOL : Material.RED_WOOL);
+        ItemMeta webhookMeta = webhook.getItemMeta();
+        webhookMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "Discord Webhook");
+        List<String> webhookLore = new ArrayList<>();
+        webhookLore.add(ChatColor.GRAY + "Discord webhook ayarlarını");
+        webhookLore.add(ChatColor.GRAY + "düzenlemek için tıkla");
+        webhookLore.add("");
+        webhookLore.add(ChatColor.GRAY + "Durum: " + 
+            (plugin.isWebhookEnabled() ? ChatColor.GREEN + "Aktif" : ChatColor.RED + "Kapalı"));
+        if (plugin.isWebhookEnabled()) {
+            webhookLore.add(ChatColor.GRAY + "URL: " + ChatColor.WHITE + plugin.getWebhookUrl());
+        }
+        webhookMeta.setLore(webhookLore);
+        webhook.setItemMeta(webhookMeta);
+        gui.setItem(52, webhook);
         
         return gui;
     }
@@ -301,5 +316,94 @@ public class GUIManager {
         gui.setItem(45, back);
         
         return gui;
+    }
+
+    public Inventory createWebhookMenu() {
+        Inventory gui = Bukkit.createInventory(null, 27, ChatColor.DARK_PURPLE + "Discord Webhook Ayarları");
+        
+        // Status Item (Center)
+        ItemStack status = new ItemStack(plugin.isWebhookEnabled() ? Material.GREEN_WOOL : Material.RED_WOOL);
+        ItemMeta statusMeta = status.getItemMeta();
+        statusMeta.setDisplayName((plugin.isWebhookEnabled() ? ChatColor.GREEN + "✔ Webhook Aktif" : 
+            ChatColor.RED + "✘ Webhook Devre Dışı"));
+        List<String> statusLore = new ArrayList<>();
+        statusLore.add("");
+        statusLore.add(ChatColor.GRAY + "Durum: " + 
+            (plugin.isWebhookEnabled() ? ChatColor.GREEN + "Aktif" : ChatColor.RED + "Kapalı"));
+        if (plugin.isWebhookEnabled() && !plugin.getWebhookUrl().isEmpty()) {
+            statusLore.add("");
+            statusLore.add(ChatColor.GRAY + "Webhook URL:");
+            statusLore.add(ChatColor.WHITE + formatWebhookUrl(plugin.getWebhookUrl()));
+        }
+        statusLore.add("");
+        statusLore.add(ChatColor.YELLOW + "→ Tıklayarak " + 
+            (plugin.isWebhookEnabled() ? "devre dışı bırak" : "aktif et"));
+        statusMeta.setLore(statusLore);
+        status.setItemMeta(statusMeta);
+        gui.setItem(13, status);
+        
+        // URL Configuration (Left)
+        ItemStack urlConfig = new ItemStack(Material.BOOK);
+        ItemMeta urlMeta = urlConfig.getItemMeta();
+        urlMeta.setDisplayName(ChatColor.AQUA + "Webhook URL Ayarla");
+        List<String> urlLore = new ArrayList<>();
+        urlLore.add(ChatColor.GRAY + "Discord webhook URL'sini");
+        urlLore.add(ChatColor.GRAY + "ayarlamak için tıkla");
+        if (!plugin.getWebhookUrl().isEmpty()) {
+            urlLore.add("");
+            urlLore.add(ChatColor.GRAY + "Mevcut URL:");
+            urlLore.add(ChatColor.WHITE + formatWebhookUrl(plugin.getWebhookUrl()));
+        }
+        urlMeta.setLore(urlLore);
+        urlConfig.setItemMeta(urlMeta);
+        gui.setItem(11, urlConfig);
+        
+        // Test Button (Right)
+        ItemStack test = new ItemStack(Material.PAPER);
+        ItemMeta testMeta = test.getItemMeta();
+        testMeta.setDisplayName(ChatColor.GOLD + "Test Mesajı Gönder");
+        List<String> testLore = new ArrayList<>();
+        testLore.add(ChatColor.GRAY + "Webhook'un çalışıp çalışmadığını");
+        testLore.add(ChatColor.GRAY + "test etmek için tıkla");
+        if (!plugin.isWebhookEnabled()) {
+            testLore.add("");
+            testLore.add(ChatColor.RED + "Webhook aktif değil!");
+        }
+        testMeta.setLore(testLore);
+        test.setItemMeta(testMeta);
+        gui.setItem(15, test);
+        
+        // Back Button
+        ItemStack back = new ItemStack(Material.ARROW);
+        ItemMeta backMeta = back.getItemMeta();
+        backMeta.setDisplayName(ChatColor.YELLOW + "Geri Dön");
+        back.setItemMeta(backMeta);
+        gui.setItem(18, back);
+        
+        return gui;
+    }
+
+    private String formatWebhookUrl(String url) {
+        if (url.length() <= 60) return url;
+        
+        // Find the ID part
+        int idStart = url.indexOf("/webhooks/") + 9;
+        int idEnd = url.indexOf("/", idStart);
+        
+        if (idStart != -1 && idEnd != -1) {
+            String start = url.substring(0, idStart);
+            String id = url.substring(idStart, idEnd);
+            String end = url.substring(idEnd);
+            
+            // Shorten the ID part if it's too long
+            if (id.length() > 10) {
+                id = id.substring(0, 4) + ".." + id.substring(id.length() - 4);
+            }
+            
+            return start + id + end;
+        }
+        
+        // Fallback if URL doesn't match expected format
+        return url.substring(0, 28) + "..." + url.substring(url.length() - 28);
     }
 } 

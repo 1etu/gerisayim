@@ -10,6 +10,11 @@ import com.etu.countdown.commands.TestCommand;
 import com.etu.countdown.gui.GUIManager;
 import com.etu.countdown.gui.GUIListener;
 import com.etu.countdown.gui.TimerCreationManager;
+import org.json.JSONObject;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -21,10 +26,13 @@ public class BaseClass extends JavaPlugin {
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy HH:mm", new Locale("tr"));
     private GUIManager guiManager;
     private TimerCreationManager timerCreationManager;
+    private String webhookUrl;
+    private boolean useWebhook;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        loadWebhookConfig();
         loadCountdowns();
         guiManager = new GUIManager(this);
         timerCreationManager = new TimerCreationManager(this);
@@ -34,6 +42,42 @@ public class BaseClass extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GUIListener(this, guiManager), this);
         getServer().getPluginManager().registerEvents(timerCreationManager, this);
         startCountdownChecker();
+    }
+
+    private void loadWebhookConfig() {
+        webhookUrl = getConfig().getString("discord.webhook_url", "");
+        useWebhook = getConfig().getBoolean("discord.use_webhook", false);
+    }
+
+    public void sendWebhook(String content) {
+        if (!useWebhook || webhookUrl.isEmpty()) {
+            return;
+        }
+
+        try {
+            JSONObject json = new JSONObject();
+            json.put("content", ChatColor.stripColor(content));
+
+            URL url = new URL(webhookUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = json.toString().getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+
+            int responseCode = conn.getResponseCode();
+            conn.disconnect();
+            
+            if (responseCode != 204) {
+                getLogger().warning("Discord webhook error: " + responseCode);
+            }
+        } catch (Exception e) {
+            getLogger().warning("Discord webhook error: " + e.getMessage());
+        }
     }
 
     public void loadCountdowns() {
@@ -97,13 +141,15 @@ public class BaseClass extends JavaPlugin {
                     if (eventTimers != null) {
                         for (Timer timer : eventTimers) {
                             if (secondsUntil == timer.getSeconds()) {
+                                String message = timer.getContent();
                                 if (timer.getType() == TimerType.MESSAGE) {
-                                    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', timer.getContent()));
+                                    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', message));
                                 } else if (timer.getType() == TimerType.TITLE) {
-                                    String coloredContent = ChatColor.translateAlternateColorCodes('&', timer.getContent());
+                                    String coloredContent = ChatColor.translateAlternateColorCodes('&', message);
                                     Bukkit.getOnlinePlayers().forEach(player -> 
                                         player.sendTitle(coloredContent, "", 10, 70, 20));
                                 }
+                                sendWebhook(message); // test
                             }
                         }
                     }
@@ -216,5 +262,25 @@ public class BaseClass extends JavaPlugin {
         timers.clear();
         reloadConfig();
         loadCountdowns();
+    }
+
+    public boolean isWebhookEnabled() {
+        return useWebhook;
+    }
+
+    public void setWebhookUrl(String url) {
+        this.webhookUrl = url;
+        getConfig().set("discord.webhook_url", url);
+        saveConfig();
+    }
+
+    public void setWebhookEnabled(boolean enabled) {
+        this.useWebhook = enabled;
+        getConfig().set("discord.use_webhook", enabled);
+        saveConfig();
+    }
+
+    public String getWebhookUrl() {
+        return webhookUrl;
     }
 }

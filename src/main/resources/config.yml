@@ -1,3 +1,6 @@
+discord:
+  webhook_url: ""
+  use_webhook: false
 countdowns:
   yeniyil:
     display_name: "Yeni Yıl"

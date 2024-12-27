@@ -48,6 +48,11 @@ public class GUIListener implements Listener {
                 String eventId = ChatColor.stripColor(lore.get(lore.size() - 1)).substring(4);
                 player.openInventory(guiManager.createEventMenu(eventId));
             }
+
+            if (clickedItem.getItemMeta().getDisplayName().equals(ChatColor.LIGHT_PURPLE + "Discord Webhook")) {
+                player.openInventory(guiManager.createWebhookMenu());
+                return;
+            }
         }
         else if (title.equals(ChatColor.DARK_PURPLE + "Yeni Etkinlik Oluştur")) {
             event.setCancelled(true);
@@ -178,6 +183,35 @@ public class GUIListener implements Listener {
                 List<String> lore = clickedItem.getItemMeta().getLore();
                 String eventId = ChatColor.stripColor(lore.get(lore.size() - 1)).substring(4);
                 player.openInventory(guiManager.createEventMenu(eventId));
+            }
+        }
+        else if (title.equals(ChatColor.DARK_PURPLE + "Discord Webhook Ayarları")) {
+            event.setCancelled(true);
+            ItemStack clickedItem = event.getCurrentItem();
+            if (clickedItem == null || !clickedItem.hasItemMeta()) return;
+
+            String itemName = clickedItem.getItemMeta().getDisplayName();
+            
+            if (itemName.equals(ChatColor.YELLOW + "Geri Dön")) {
+                player.openInventory(guiManager.createMainMenu());
+            }
+            else if (itemName.equals(ChatColor.AQUA + "Webhook URL Ayarla")) {
+                player.closeInventory();
+                plugin.getTimerCreationManager().startWebhookConfiguration(player);
+            }
+            else if (itemName.startsWith(ChatColor.GREEN + "✔ Webhook Aktif") || 
+                     itemName.startsWith(ChatColor.RED + "✘ Webhook Devre Dışı")) {
+                boolean newState = !plugin.isWebhookEnabled();
+                plugin.setWebhookEnabled(newState);
+                player.openInventory(guiManager.createWebhookMenu());
+            }
+            else if (itemName.equals(ChatColor.GOLD + "Test Mesajı Gönder")) {
+                if (!plugin.isWebhookEnabled()) {
+                    player.sendMessage(ChatColor.RED + "Webhook aktif değil!");
+                    return;
+                }
+                plugin.sendWebhook("Test mesajı - " + player.getName() + " tarafından gönderildi");
+                player.sendMessage(ChatColor.GREEN + "Test mesajı gönderildi!");
             }
         }
     }

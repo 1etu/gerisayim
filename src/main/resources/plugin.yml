@@ -11,6 +11,10 @@ commands:
     description: Editör
     permission: countdown.admin
     usage: /editor
+  test:
+    description: Test komutu
+    permission: countdown.admin
+    usage: /test
 
 permissions:
   countdown.admin:
