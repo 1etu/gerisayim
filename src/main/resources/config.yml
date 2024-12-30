@@ -1,6 +1,8 @@
 discord:
   webhook_url: ""
   use_webhook: false
+  use_embeds: false
+  embed_color: "yesil"
 countdowns:
   yeniyil:
     display_name: "Yeni Yıl"

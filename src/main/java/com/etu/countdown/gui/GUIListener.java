@@ -106,7 +106,14 @@ public class GUIListener implements Listener {
                 player.openInventory(guiManager.createMainMenu());
             }
             else if (itemName.equals(ChatColor.GREEN + "Yeni Zamanlayıcı Ekle")) {
-                TimerType type = event.isRightClick() ? TimerType.TITLE : TimerType.MESSAGE;
+                TimerType type;
+                if (event.isShiftClick() && event.isRightClick()) {
+                    type = TimerType.COMMAND;
+                } else if (event.isRightClick()) {
+                    type = TimerType.TITLE;
+                } else {
+                    type = TimerType.MESSAGE;
+                }
                 player.openInventory(guiManager.createTimerCreationMenu(eventId, type));
             }
             else if (itemName.equals(ChatColor.RED + "Etkinliği Sil")) {
@@ -212,6 +219,19 @@ public class GUIListener implements Listener {
                 }
                 plugin.sendWebhook("Test mesajı - " + player.getName() + " tarafından gönderildi");
                 player.sendMessage(ChatColor.GREEN + "Test mesajı gönderildi!");
+            }
+            else if (itemName.startsWith(ChatColor.GREEN + "✔ Embed Mesajlar") || 
+                     itemName.startsWith(ChatColor.RED + "✘ Normal Mesajlar")) {
+                boolean newState = !plugin.getDiscordManager().isUsingEmbeds();
+                plugin.getDiscordManager().setUseEmbeds(newState);
+                player.openInventory(guiManager.createWebhookMenu());
+            }
+            else if (itemName.equals(ChatColor.AQUA + "Embed Rengi")) {
+                player.closeInventory();
+                player.sendMessage(ChatColor.YELLOW + "Yeni rengi sohbete yazın:");
+                player.sendMessage(ChatColor.GRAY + "Kullanılabilir renkler: beyaz, siyah, kirmizi, yesil,");
+                player.sendMessage(ChatColor.GRAY + "mavi, sari, mor, turuncu, pembe, turkuaz");
+                plugin.getTimerCreationManager().startEmbedColorConfiguration(player);
             }
         }
     }

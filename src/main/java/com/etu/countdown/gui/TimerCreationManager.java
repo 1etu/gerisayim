@@ -19,6 +19,7 @@ public class TimerCreationManager implements Listener {
     private final BaseClass plugin;
     private final Map<UUID, TimerCreationSession> sessions = new HashMap<>();
     private final Set<UUID> webhookConfigs = new HashSet<>();
+    private final Set<UUID> embedColorConfigs = new HashSet<>();
 
     public TimerCreationManager(BaseClass plugin) {
         this.plugin = plugin;
@@ -40,6 +41,10 @@ public class TimerCreationManager implements Listener {
         webhookConfigs.add(player.getUniqueId());
         player.sendMessage(ChatColor.YELLOW + "Discord webhook URL'sini girin:");
         player.sendMessage(ChatColor.GRAY + "İptal etmek için 'iptal' yazın");
+    }
+
+    public void startEmbedColorConfiguration(Player player) {
+        embedColorConfigs.add(player.getUniqueId());
     }
 
     @EventHandler
@@ -69,6 +74,26 @@ public class TimerCreationManager implements Listener {
             webhookConfigs.remove(playerId);
             
             player.sendMessage(ChatColor.GREEN + "Webhook URL'si kaydedildi ve aktif edildi!");
+            
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                player.openInventory(plugin.getGuiManager().createWebhookMenu());
+            });
+            return;
+        } else if (embedColorConfigs.contains(playerId)) {
+            event.setCancelled(true);
+            String message = event.getMessage();
+            
+            if (!plugin.getDiscordManager().isValidEmbedColor(message)) {
+                player.sendMessage(ChatColor.RED + "Geçersiz renk! Kullanılabilir renkler:");
+                player.sendMessage(ChatColor.GRAY + "beyaz, siyah, kirmizi, yesil, mavi, sari,");
+                player.sendMessage(ChatColor.GRAY + "mor, turuncu, pembe, turkuaz");
+                return;
+            }
+            
+            plugin.getDiscordManager().setEmbedColor(message);
+            embedColorConfigs.remove(playerId);
+            
+            player.sendMessage(ChatColor.GREEN + "Embed rengi ayarlandı: " + message);
             
             Bukkit.getScheduler().runTask(plugin, () -> {
                 player.openInventory(plugin.getGuiManager().createWebhookMenu());

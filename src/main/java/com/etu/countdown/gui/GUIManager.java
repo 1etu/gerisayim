@@ -153,6 +153,7 @@ public class GUIManager {
         addLore.add("");
         addLore.add(ChatColor.WHITE + "→ Sol tık: Mesaj zamanlayıcısı");
         addLore.add(ChatColor.WHITE + "→ Sağ tık: Başlık zamanlayıcısı");
+        addLore.add(ChatColor.WHITE + "→ Shift + Sağ tık: Komut zamanlayıcısı");
         addMeta.setLore(addLore);
         addTimer.setItemMeta(addMeta);
         gui.setItem(53, addTimer);
@@ -369,6 +370,44 @@ public class GUIManager {
         testMeta.setLore(testLore);
         test.setItemMeta(testMeta);
         gui.setItem(15, test);
+        
+        ItemStack embedToggle = new ItemStack(Material.BOOK);
+        ItemMeta embedMeta = embedToggle.getItemMeta();
+        boolean usingEmbeds = plugin.getDiscordManager().isUsingEmbeds();
+        embedMeta.setDisplayName((usingEmbeds ? ChatColor.GREEN + "✔ Embed Mesajlar" : 
+            ChatColor.RED + "✘ Normal Mesajlar"));
+        List<String> embedLore = new ArrayList<>();
+        embedLore.add("");
+        embedLore.add(ChatColor.GRAY + "Mesaj tipi: " + 
+            (usingEmbeds ? ChatColor.GREEN + "Embed" : ChatColor.RED + "Normal"));
+        if (usingEmbeds) {
+            embedLore.add(ChatColor.GRAY + "Renk: " + ChatColor.WHITE + 
+                plugin.getDiscordManager().getEmbedColor());
+        }
+        embedLore.add("");
+        embedLore.add(ChatColor.YELLOW + "→ Tıklayarak değiştir");
+        embedMeta.setLore(embedLore);
+        embedToggle.setItemMeta(embedMeta);
+        gui.setItem(14, embedToggle);
+        
+        if (usingEmbeds) {
+            ItemStack colorPicker = new ItemStack(Material.CYAN_DYE);
+            ItemMeta colorMeta = colorPicker.getItemMeta();
+            colorMeta.setDisplayName(ChatColor.AQUA + "Embed Rengi");
+            List<String> colorLore = new ArrayList<>();
+            colorLore.add(ChatColor.GRAY + "Şu anki renk: " + ChatColor.WHITE + 
+                plugin.getDiscordManager().getEmbedColor());
+            colorLore.add("");
+            colorLore.add(ChatColor.GRAY + "Kullanılabilir renkler:");
+            colorLore.add(ChatColor.WHITE + "beyaz, siyah, kirmizi, yesil,");
+            colorLore.add(ChatColor.WHITE + "mavi, sari, mor, turuncu,");
+            colorLore.add(ChatColor.WHITE + "pembe, turkuaz");
+            colorLore.add("");
+            colorLore.add(ChatColor.YELLOW + "→ Tıklayarak değiştir");
+            colorMeta.setLore(colorLore);
+            colorPicker.setItemMeta(colorMeta);
+            gui.setItem(16, colorPicker);
+        }
         
         ItemStack back = new ItemStack(Material.ARROW);
         ItemMeta backMeta = back.getItemMeta();

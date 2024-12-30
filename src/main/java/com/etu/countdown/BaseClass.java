@@ -10,11 +10,7 @@ import com.etu.countdown.commands.TestCommand;
 import com.etu.countdown.gui.GUIManager;
 import com.etu.countdown.gui.GUIListener;
 import com.etu.countdown.gui.TimerCreationManager;
-import org.json.JSONObject;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import com.etu.countdown.discord.DiscordWebhookManager;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -26,13 +22,12 @@ public class BaseClass extends JavaPlugin {
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy HH:mm", new Locale("tr"));
     private GUIManager guiManager;
     private TimerCreationManager timerCreationManager;
-    private String webhookUrl;
-    private boolean useWebhook;
+    private DiscordWebhookManager discordManager;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        loadWebhookConfig();
+        discordManager = new DiscordWebhookManager(this);
         loadCountdowns();
         guiManager = new GUIManager(this);
         timerCreationManager = new TimerCreationManager(this);
@@ -44,40 +39,28 @@ public class BaseClass extends JavaPlugin {
         startCountdownChecker();
     }
 
-    private void loadWebhookConfig() {
-        webhookUrl = getConfig().getString("discord.webhook_url", "");
-        useWebhook = getConfig().getBoolean("discord.use_webhook", false);
+    public DiscordWebhookManager getDiscordManager() {
+        return discordManager;
     }
 
     public void sendWebhook(String content) {
-        if (!useWebhook || webhookUrl.isEmpty()) {
-            return;
-        }
+        discordManager.sendMessage(content);
+    }
 
-        try {
-            JSONObject json = new JSONObject();
-            json.put("content", ChatColor.stripColor(content));
+    public boolean isWebhookEnabled() {
+        return discordManager.isEnabled();
+    }
 
-            URL url = new URL(webhookUrl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setDoOutput(true);
+    public String getWebhookUrl() {
+        return discordManager.getWebhookUrl();
+    }
 
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = json.toString().getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-            }
+    public void setWebhookUrl(String url) {
+        discordManager.setWebhookUrl(url);
+    }
 
-            int responseCode = conn.getResponseCode();
-            conn.disconnect();
-            
-            if (responseCode != 204) {
-                getLogger().warning("Discord webhook error: " + responseCode);
-            }
-        } catch (Exception e) {
-            getLogger().warning("Discord webhook error: " + e.getMessage());
-        }
+    public void setWebhookEnabled(boolean enabled) {
+        discordManager.setEnabled(enabled);
     }
 
     public void loadCountdowns() {
@@ -96,14 +79,18 @@ public class BaseClass extends JavaPlugin {
                     List<Timer> eventTimers = new ArrayList<>();
                     if (getConfig().contains("countdowns." + key + ".timers")) {
                         for (Map<?, ?> timerMap : getConfig().getMapList("countdowns." + key + ".timers")) {
-                            int seconds = 0;
+                            int seconds;
                             
-                            if (timerMap.containsKey("saniye")) {
+                            if (timerMap.containsKey("finish")) {
+                                seconds = -1;
+                            } else if (timerMap.containsKey("saniye")) {
                                 seconds = Integer.parseInt(timerMap.get("saniye").toString());
                             } else if (timerMap.containsKey("dakika")) {
                                 seconds = Integer.parseInt(timerMap.get("dakika").toString()) * 60;
                             } else if (timerMap.containsKey("saat")) {
                                 seconds = Integer.parseInt(timerMap.get("saat").toString()) * 3600;
+                            } else {
+                                continue;
                             }
 
                             String content = timerMap.get("content") != null ? timerMap.get("content").toString() : "";
@@ -140,21 +127,32 @@ public class BaseClass extends JavaPlugin {
                     List<Timer> eventTimers = timers.get(event);
                     if (eventTimers != null) {
                         for (Timer timer : eventTimers) {
-                            if (secondsUntil == timer.getSeconds()) {
+                            boolean shouldTrigger = timer.getSeconds() == -1 ? 
+                                secondsUntil <= 0 && secondsUntil > -2 : // For "finish" timers
+                                secondsUntil == timer.getSeconds();      // For normal timers
+
+                            if (shouldTrigger) {
                                 String message = timer.getContent();
-                                if (timer.getType() == TimerType.MESSAGE) {
-                                    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', message));
-                                } else if (timer.getType() == TimerType.TITLE) {
-                                    String coloredContent = ChatColor.translateAlternateColorCodes('&', message);
-                                    Bukkit.getOnlinePlayers().forEach(player -> 
-                                        player.sendTitle(coloredContent, "", 10, 70, 20));
+                                switch (timer.getType()) {
+                                    case MESSAGE:
+                                        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', message));
+                                        break;
+                                    case TITLE:
+                                        String coloredContent = ChatColor.translateAlternateColorCodes('&', message);
+                                        Bukkit.getOnlinePlayers().forEach(player -> 
+                                            player.sendTitle(coloredContent, "", 10, 70, 20));
+                                        break;
+                                    case COMMAND:
+                                        String command = ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', message));
+                                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+                                        break;
                                 }
-                                sendWebhook(message); // test
+                                sendWebhook(message);
                             }
                         }
                     }
 
-                    if (secondsUntil < 0) {
+                    if (secondsUntil < -2) { // Give some buffer time for finish events
                         countdowns.remove(event);
                         timers.remove(event);
                         getConfig().set("countdowns." + event, null);
@@ -162,7 +160,7 @@ public class BaseClass extends JavaPlugin {
                     }
                 }
             }
-        }.runTaskTimer(this, 0L, 20L); 
+        }.runTaskTimer(this, 0L, 20L);
     }
 
     public Map<String, Date> getCountdowns() {
@@ -196,7 +194,9 @@ public class BaseClass extends JavaPlugin {
         List<Map<String, Object>> timersList = new ArrayList<>();
         for (Timer t : eventTimers) {
             Map<String, Object> timerMap = new HashMap<>();
-            if (t.getSeconds() % 3600 == 0) {
+            if (t.getSeconds() == -1) {
+                timerMap.put("finish", true);
+            } else if (t.getSeconds() % 3600 == 0) {
                 timerMap.put("saat", t.getSeconds() / 3600);
             } else if (t.getSeconds() % 60 == 0) {
                 timerMap.put("dakika", t.getSeconds() / 60);
@@ -262,25 +262,5 @@ public class BaseClass extends JavaPlugin {
         timers.clear();
         reloadConfig();
         loadCountdowns();
-    }
-
-    public boolean isWebhookEnabled() {
-        return useWebhook;
-    }
-
-    public void setWebhookUrl(String url) {
-        this.webhookUrl = url;
-        getConfig().set("discord.webhook_url", url);
-        saveConfig();
-    }
-
-    public void setWebhookEnabled(boolean enabled) {
-        this.useWebhook = enabled;
-        getConfig().set("discord.use_webhook", enabled);
-        saveConfig();
-    }
-
-    public String getWebhookUrl() {
-        return webhookUrl;
     }
 }
